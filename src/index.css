@@ -176,3 +176,13 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
 .is-printing .a4-canvas {
   box-shadow: none !important; 
 }
+
+.loading-screen {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 20px;
+  color: #64748b;
+  background: #f3f4f6;
+}

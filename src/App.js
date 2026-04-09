@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import html2canvas from 'html2canvas';
 import Sidebar from './components/Sidebar';
@@ -6,17 +6,11 @@ import A4Canvas from './components/A4Canvas';
 import './index.css';
 
 export default function App() {
-  const [ordersData] = useState({
-    "17978": [
-      { id: "img-1", sku: "15986", url: "https://pub-3ad6d42f11fb48398296c802423e1efa.r2.dev/442.png" },
-      { id: "img-2", sku: "16491", url: "https://pub-3ad6d42f11fb48398296c802423e1efa.r2.dev/340.png" },
-      { id: "img-3", sku: "16492", url: "https://pub-3ad6d42f11fb48398296c802423e1efa.r2.dev/442.png" } 
-    ]
-  });
-
-  const [activeOrderId, setActiveOrderId] = useState("17978");
+  // 1. 初始化状态：初始为空对象
+  const [ordersData, setOrdersData] = useState({});
+  const [activeOrderId, setActiveOrderId] = useState("");
+  const [isLoading, setIsLoading] = useState(true); // 加载状态
   
-  // 画布的 4 行状态
   const [canvasRows, setCanvasRows] = useState([
     { id: 'row-1', layout: '1-col', items: [] },
     { id: 'row-2', layout: '2-col', items: [] },
@@ -24,12 +18,46 @@ export default function App() {
     { id: 'row-4', layout: '2-col', items: [] },
   ]);
 
-  // 新增：双列靠拢的偏移量状态（默认 0mm，最大 40mm）
   const [overlapOffset, setOverlapOffset] = useState(0);
-  
-  // 打印模式状态
   const [isPrinting, setIsPrinting] = useState(false);
   const a4Ref = useRef(null);
+
+  const API_URL = "https://script.google.com/macros/s/AKfycbyEyj4bcl_HjGn3BJlFDoNbCW3SeTLw1qSUpLK9UcoByDlQ989hJTYAULKgUZuBqt5B5A/exec";
+
+  // 2. 使用 useEffect 在页面加载时获取数据
+  useEffect(() => {
+    fetch(API_URL)
+      .then(response => response.json())
+      .then(data => {
+        // 将 API 返回的扁平数组转换为按“订单号”分组的对象
+        const grouped = data.reduce((acc, item) => {
+          const orderId = String(item["订单号"]);
+          if (!acc[orderId]) {
+            acc[orderId] = [];
+          }
+          acc[orderId].push({
+            // 唯一 ID：SKU + 随机数，防止重复
+            id: `img-${item["SKU"]}-${Math.random().toString(36).substr(2, 9)}`,
+            sku: item["SKU"],
+            url: item["匹配URL"][0]
+          });
+          return acc;
+        }, {});
+
+        setOrdersData(grouped);
+        
+        // 默认选中第一个订单
+        const firstOrder = Object.keys(grouped)[0];
+        if (firstOrder) {
+          setActiveOrderId(firstOrder);
+        }
+        setIsLoading(false);
+      })
+      .catch(error => {
+        console.error("获取数据失败:", error);
+        setIsLoading(false);
+      });
+  }, []); // 仅在组件挂载时执行一次
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
@@ -42,7 +70,8 @@ export default function App() {
     const imageId = active.id;
     const targetRowId = over.id;
 
-    const draggedItem = ordersData[activeOrderId].find(item => item.id === imageId);
+    // 从当前选中的订单中找到图片数据
+    const draggedItem = ordersData[activeOrderId]?.find(item => item.id === imageId);
     if (!draggedItem) return;
 
     setCanvasRows(prevRows => prevRows.map(row => {
@@ -76,29 +105,28 @@ export default function App() {
 
   const downloadImage = () => {
     if (!a4Ref.current) return;
-    
     setIsPrinting(true);
-
     setTimeout(async () => {
       try {
         const canvas = await html2canvas(a4Ref.current, { 
           scale: 3, 
           useCORS: true, 
-          allowTaint: false,
           backgroundColor: '#ffffff' 
         });
         const link = document.createElement('a');
         link.href = canvas.toDataURL("image/png");
-        link.download = `订单-${activeOrderId}-排版底稿.png`;
+        link.download = `订单-${activeOrderId}.png`;
         link.click();
-      } catch (error) {
-        console.error("生成图片失败:", error);
-        alert("图片下载失败，请确保 R2 已配置 CORS 规则！");
       } finally {
         setIsPrinting(false);
       }
     }, 100);
   };
+
+  // 如果正在加载，显示提示
+  if (isLoading) {
+    return <div className="loading-screen">正在获取订单数据，请稍候...</div>;
+  }
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
@@ -109,7 +137,6 @@ export default function App() {
             activeOrderItems={ordersData[activeOrderId]} 
             activeOrderId={activeOrderId}
             onOrderChange={setActiveOrderId} 
-            // 传递滑块数据
             overlapOffset={overlapOffset}
             onOverlapChange={setOverlapOffset}
           />
@@ -123,7 +150,6 @@ export default function App() {
                a4Ref={a4Ref} 
                onToggleLayout={toggleLayout} 
                onRemoveItem={removeItemFromCanvas} 
-               // 传递滑块数据给画布
                overlapOffset={overlapOffset}
              />
           </div>
