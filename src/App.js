@@ -5,7 +5,7 @@ import './index.css';
 
 export default function App() {
   // 模拟从 API 获取到的订单数据
-  const [ordersData, setOrdersData] = useState({
+  const [ordersData] = useState({
     "17978": [
       { id: "img-1", sku: "15986", url: "https://pub-3ad6d42f11fb48398296c802423e1efa.r2.dev/442.png" },
       { id: "img-2", sku: "16491", url: "https://pub-3ad6d42f11fb48398296c802423e1efa.r2.dev/340.png" },
@@ -19,7 +19,7 @@ export default function App() {
   const [activeOrderId, setActiveOrderId] = useState("17978");
 
   // A4 画布状态 (暂未加入图片，只是空架子)
-  const [canvasRows, setCanvasRows] = useState([
+  const [canvasRows] = useState([
     { id: 'row-1', layout: '1-col', items: [] },
     { id: 'row-2', layout: '2-col', items: [] },
     { id: 'row-3', layout: '1-col', items: [] },
