@@ -41,26 +41,31 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
 /* ================= 右侧主工作区及 A4 画布 ================= */
 .main-workspace { flex: 1; display: flex; justify-content: center; overflow-y: auto; align-items: flex-start;}
 
+/* 核心修复：锁定 A4 容器，禁止内容撑开 */
 .a4-canvas {
   width: 210mm;
   height: 297mm;
   background: white;
-  /* 上下留 2cm (20mm)，左右留 1cm (10mm) */
+  /* 上下留 20mm，左右留 10mm */
   padding: 20mm 10mm; 
   box-sizing: border-box;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-  display: grid;
-  grid-template-rows: repeat(4, 1fr); 
-  /* 行之间留 1cm (10mm) 的间距 */
+  display: flex;
+  flex-direction: column;
+  /* 行间距 10mm */
   gap: 10mm; 
+  overflow: hidden; /* 强制裁剪任何试图溢出的部分 */
+  position: relative;
 }
 
-
 /* ================= 每一行容器及布局控制 ================= */
+
+/* 核心修复：精确锁定每一行的物理高度！
+   计算公式: (A4总高 297 - 上下边距 40 - 三个行间距 30) / 4行 = 56.75mm */
 .canvas-row-wrapper {
-  position: relative;
+  height: 56.75mm; 
   width: 100%;
-  height: 100%;
+  position: relative;
   display: flex;
   flex-direction: column;
 }
@@ -85,38 +90,34 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
 
 /* 图片在行内的外框 */
 .canvas-row {
-  flex: 1;
+  height: 100%;
+  width: 100%;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10mm; /* 双列时图片间的间距设为 1cm */
-  overflow: hidden;
-  transition: all 0.2s;
+  gap: 10mm; /* 双列时图片间的间距设为 10mm */
   border: 2px dashed #cbd5e1;
-  border-radius: 4px;
+  box-sizing: border-box;
+  transition: all 0.2s;
 }
 
 .placeholder-text { color: #94a3b8; text-align: center; font-size: 14px; }
 
 
 /* ================= 核心排版：图片容器与尺寸控制 ================= */
+
+/* 核心修复：精确锁定单张图片的物理宽度！
+   计算公式: (A4总宽 210 - 左右边距 20 - 双列中间距 10) / 2列 = 90mm */
 .canvas-item-container {
-  position: relative;
   height: 100%;
+  width: 90mm; /* 强制单列和双列宽度一致，实现完美居中且不撑大 */
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
 }
 
-/* 修复1：单列和双列宽度约束一模一样！强制单列处于正中间且不会变大 */
-.canvas-row[data-layout="1-col"] .canvas-item-container {
-  width: calc(50% - 5mm); 
-}
-.canvas-row[data-layout="2-col"] .canvas-item-container {
-  width: calc(50% - 5mm); 
-}
-
-/* 确保图片不溢出 */
+/* 确保图片绝对不超过所在的毫米级容器 */
 .canvas-img {
   max-width: 100%;
   max-height: 100%;
@@ -144,8 +145,7 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
 .remove-item-btn:hover { background: #dc2626; }
 
 
-/* ================= 极净下载模式 (修复 2) ================= */
-/* 当 App.js 触发下载，外层加上 is-printing 状态时生效 */
+/* ================= 极净下载模式 ================= */
 
 .is-printing .no-print,
 .is-printing .remove-item-btn,
@@ -155,7 +155,7 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
 }
 
 .is-printing .canvas-row {
-  border-color: transparent !important;
+  border: none !important;
   background-color: transparent !important;
 }
 

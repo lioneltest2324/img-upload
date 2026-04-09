@@ -5,6 +5,9 @@ import Sidebar from './components/Sidebar';
 import A4Canvas from './components/A4Canvas';
 import './index.css';
 
+// 在文件顶部定义
+const getCORSUrl = (url) => `${url}?t=${new Date().getTime()}`;
+
 export default function App() {
   const [ordersData] = useState({
     "17978": [
