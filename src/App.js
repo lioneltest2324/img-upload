@@ -1,11 +1,13 @@
 import React, { useState, useRef } from 'react';
-import html2canvas from 'html2canvas'; // 引入截图库
+import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import html2canvas from 'html2canvas';
 import Sidebar from './components/Sidebar';
 import A4Canvas from './components/A4Canvas';
 import './index.css';
 
 export default function App() {
-  const [ordersData] = useState({
+  // 这里的 setOrdersData 之后会用到，所以不会报错
+  const [ordersData, setOrdersData] = useState({
     "17978": [
       { id: "img-1", sku: "15986", url: "https://pub-3ad6d42f11fb48398296c802423e1efa.r2.dev/442.png" },
       { id: "img-2", sku: "16491", url: "https://pub-3ad6d42f11fb48398296c802423e1efa.r2.dev/340.png" },
@@ -14,9 +16,6 @@ export default function App() {
   });
 
   const [activeOrderId, setActiveOrderId] = useState("17978");
-  const a4Ref = useRef(null); // 创建一个引用，指向 A4 画布
-
-  // 画布状态，现在包含 layout 属性
   const [canvasRows, setCanvasRows] = useState([
     { id: 'row-1', layout: '1-col', items: [] },
     { id: 'row-2', layout: '2-col', items: [] },
@@ -24,54 +23,77 @@ export default function App() {
     { id: 'row-4', layout: '2-col', items: [] },
   ]);
 
-  // 修改行布局的函数
+  const a4Ref = useRef(null);
+
+  // 设置传感器，防止点击按钮时触发拖拽
+  const sensors = useSensors(useSensor(PointerSensor, {
+    activationConstraint: { distance: 8 },
+  }));
+
+  // 核心：处理拖拽结束的逻辑
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    // 如果没有拖到目标区域，直接返回
+    if (!over) return;
+
+    const imageId = active.id;
+    const targetRowId = over.id;
+
+    // 1. 找到被拖拽的图片对象
+    const draggedItem = ordersData[activeOrderId].find(item => item.id === imageId);
+    if (!draggedItem) return;
+
+    // 2. 更新画布状态：将图片加入对应的行
+    setCanvasRows(prevRows => prevRows.map(row => {
+      if (row.id === targetRowId) {
+        // 根据布局限制数量：单列1张，双列2张
+        const max = row.layout === '1-col' ? 1 : 2;
+        if (row.items.length < max) {
+          return { ...row, items: [...row.items, draggedItem] };
+        }
+      }
+      return row;
+    }));
+
+    // 3. 更新侧边栏状态：从待选池中移除已拖走的图片
+    setOrdersData(prevData => ({
+      ...prevData,
+      [activeOrderId]: prevData[activeOrderId].filter(item => item.id !== imageId)
+    }));
+  };
+
   const toggleLayout = (rowId, newLayout) => {
     setCanvasRows(prev => prev.map(row => 
-      row.id === rowId ? { ...row, layout: newLayout } : row
+      row.id === rowId ? { ...row, layout: newLayout, items: [] } : row // 切换布局时清空该行图片防止溢出
     ));
   };
 
-  // 下载 A4 图片的函数
   const downloadImage = async () => {
     if (!a4Ref.current) return;
-    
-    // 隐藏掉页面上的虚线和按钮，只下载白底和图片
-    const canvas = await html2canvas(a4Ref.current, {
-      scale: 2, // 提高清晰度 (2倍采样)
-      useCORS: true, // 允许跨域图片下载
-      backgroundColor: '#ffffff'
-    });
-    
-    const image = canvas.toDataURL("image/png");
+    const canvas = await html2canvas(a4Ref.current, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
     const link = document.createElement('a');
-    link.href = image;
-    link.download = `订单-${activeOrderId}-排版.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.download = `订单-${activeOrderId}.png`;
     link.click();
   };
 
   return (
-    <div className="app-container">
-       <div className="sidebar-container">
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <div className="app-container">
+        <div className="sidebar-container">
           <Sidebar 
             orders={Object.keys(ordersData)}
             activeOrderItems={ordersData[activeOrderId]} 
             activeOrderId={activeOrderId}
             onOrderChange={setActiveOrderId} 
           />
-          {/* 添加下载按钮 */}
-          <button className="download-btn" onClick={downloadImage}>
-             下载 A4 底稿图
-          </button>
-       </div>
+          <button className="download-btn" onClick={downloadImage}>下载 A4 底稿图</button>
+        </div>
 
-       <div className="main-workspace">
-          {/* 将 ref 传给 A4Canvas */}
-          <A4Canvas 
-            rows={canvasRows} 
-            a4Ref={a4Ref} 
-            onToggleLayout={toggleLayout} 
-          />
-       </div>
-    </div>
+        <div className="main-workspace">
+          <A4Canvas rows={canvasRows} a4Ref={a4Ref} onToggleLayout={toggleLayout} />
+        </div>
+      </div>
+    </DndContext>
   );
 }
