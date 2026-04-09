@@ -20,7 +20,7 @@ function DraggableThumbnail({ item }) {
       {...attributes} 
       className="thumbnail-card"
     >
-      <img src={item.url} alt="SKU" />
+      <img src={item.url} alt="SKU" crossOrigin="anonymous" />
       <div className="sku-label">SKU: {item.sku}</div>
     </div>
   );

@@ -23,7 +23,7 @@ function DroppableRow({ row, onToggleLayout, onRemoveItem }) {
           row.items.map((item) => (
             <div key={item.instanceId} className="canvas-item-container">
               {/* 极其重要：声明跨域匿名加载 */}
-              <img src={item.url} alt="底稿" className="canvas-img" crossOrigin="anonymous" />
+              <img src={`${item.url}?v=${item.instanceId}`} alt="底稿" className="canvas-img" crossOrigin="anonymous" />
               <button 
                 className="remove-item-btn no-print" 
                 onClick={() => onRemoveItem(row.id, item.instanceId)}
