@@ -1,13 +1,50 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans-serif; }
+
+/* 主体布局：左侧固定，右侧自适应 */
+.app-container { display: flex; height: 100vh; padding: 20px; box-sizing: border-box; gap: 20px; }
+
+/* 左侧边栏样式 */
+.sidebar-container { width: 300px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column;}
+.order-select { width: 100%; padding: 8px; margin-bottom: 20px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; }
+.sidebar-pool {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* 2列排版 */
+  gap: 10px;
+  overflow-y: auto; /* 图片多时可滚动 */
+}
+.thumbnail-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px; cursor: grab; background: #fff;}
+.thumbnail-card img { width: 100%; height: 80px; object-fit: contain; }
+.sku-label { font-size: 12px; text-align: center; color: #666; margin-top: 4px; }
+
+/* 右侧主工作区 */
+.main-workspace { flex: 1; display: flex; justify-content: center; overflow-y: auto; align-items: flex-start;}
+
+/* A4 画布核心样式 */
+.a4-canvas {
+  width: 210mm;
+  height: 297mm; /* 严格 A4 比例 */
+  background: white;
+  padding: 10mm; /* 留出白边 padding */
+  box-sizing: border-box;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  display: grid;
+  grid-template-rows: repeat(4, 1fr); /* 均分 4 行切割 */
+  gap: 10px;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+/* 每一行的样式 */
+.canvas-row {
+  border: 2px dashed #cbd5e1;
+  border-radius: 4px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  overflow: hidden;
+  background-color: #f8fafc;
 }
+.placeholder-text { color: #94a3b8; text-align: center; font-size: 14px; }
+
+/* 拖入后图片的约束 (关键) */
+.canvas-img { width: 100%; height: 100%; object-fit: contain; }
+.canvas-row[data-layout="2-col"] .canvas-img { flex: 1; }
