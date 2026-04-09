@@ -15,6 +15,8 @@ export default function App() {
   });
 
   const [activeOrderId, setActiveOrderId] = useState("17978");
+  
+  // 画布的 4 行状态
   const [canvasRows, setCanvasRows] = useState([
     { id: 'row-1', layout: '1-col', items: [] },
     { id: 'row-2', layout: '2-col', items: [] },
@@ -22,10 +24,12 @@ export default function App() {
     { id: 'row-4', layout: '2-col', items: [] },
   ]);
 
-  const a4Ref = useRef(null);
+  // 新增：双列靠拢的偏移量状态（默认 0mm，最大 40mm）
+  const [overlapOffset, setOverlapOffset] = useState(0);
   
-  // 新增：打印状态控制
+  // 打印模式状态
   const [isPrinting, setIsPrinting] = useState(false);
+  const a4Ref = useRef(null);
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
@@ -34,8 +38,10 @@ export default function App() {
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (!over) return;
+
     const imageId = active.id;
     const targetRowId = over.id;
+
     const draggedItem = ordersData[activeOrderId].find(item => item.id === imageId);
     if (!draggedItem) return;
 
@@ -68,31 +74,27 @@ export default function App() {
     ));
   };
 
-  // 优化后的极净下载功能
   const downloadImage = () => {
     if (!a4Ref.current) return;
     
-    // 1. 开启打印模式，触发 CSS 隐藏所有多余的线框和按钮
     setIsPrinting(true);
 
-    // 2. 稍微延迟 100ms，等 React 把界面上那些虚线和按钮清理掉后，再截图
     setTimeout(async () => {
       try {
         const canvas = await html2canvas(a4Ref.current, { 
           scale: 3, 
-          useCORS: true, // 允许跨域
+          useCORS: true, 
           allowTaint: false,
           backgroundColor: '#ffffff' 
         });
         const link = document.createElement('a');
         link.href = canvas.toDataURL("image/png");
-        link.download = `订单-${activeOrderId}-高清底稿.png`;
+        link.download = `订单-${activeOrderId}-排版底稿.png`;
         link.click();
       } catch (error) {
         console.error("生成图片失败:", error);
         alert("图片下载失败，请确保 R2 已配置 CORS 规则！");
       } finally {
-        // 3. 截图完成后，恢复正常的编辑界面
         setIsPrinting(false);
       }
     }, 100);
@@ -107,18 +109,22 @@ export default function App() {
             activeOrderItems={ordersData[activeOrderId]} 
             activeOrderId={activeOrderId}
             onOrderChange={setActiveOrderId} 
+            // 传递滑块数据
+            overlapOffset={overlapOffset}
+            onOverlapChange={setOverlapOffset}
           />
           <button className="download-btn" onClick={downloadImage}>下载高清底稿</button>
         </div>
 
         <div className="main-workspace">
-          {/* 这里非常关键：给 A4 画布动态添加 is-printing 类名 */}
           <div className={`a4-wrapper ${isPrinting ? 'is-printing' : ''}`}>
              <A4Canvas 
                rows={canvasRows} 
                a4Ref={a4Ref} 
                onToggleLayout={toggleLayout} 
                onRemoveItem={removeItemFromCanvas} 
+               // 传递滑块数据给画布
+               overlapOffset={overlapOffset}
              />
           </div>
         </div>
