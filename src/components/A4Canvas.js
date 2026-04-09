@@ -1,15 +1,12 @@
 import React from 'react';
 import { useDroppable } from '@dnd-kit/core';
 
-// 单个可放置的行组件
-function DroppableRow({ row, onToggleLayout }) {
-  const { isOver, setNodeRef } = useDroppable({
-    id: row.id,
-  });
+function DroppableRow({ row, onToggleLayout, onRemoveItem }) {
+  const { isOver, setNodeRef } = useDroppable({ id: row.id });
 
   const style = {
-    backgroundColor: isOver ? '#e0f2fe' : undefined, // 拖过时变蓝
-    border: isOver ? '2px solid #3b82f6' : '2px dashed #cbd5e1',
+    backgroundColor: isOver ? '#f0f9ff' : undefined,
+    border: isOver ? '2px solid #3b82f6' : '1px dashed #cbd5e1',
   };
 
   return (
@@ -21,10 +18,19 @@ function DroppableRow({ row, onToggleLayout }) {
       
       <div ref={setNodeRef} style={style} className="canvas-row" data-layout={row.layout}>
         {row.items.length === 0 ? (
-          <div className="placeholder-text">拖拽至此</div>
+          <div className="placeholder-text">拖拽图片至此</div>
         ) : (
-          row.items.map((item, index) => (
-            <img key={`${item.id}-${index}`} src={item.url} alt="底稿" className="canvas-img" />
+          row.items.map((item) => (
+            <div key={item.instanceId} className="canvas-item-container">
+              <img src={item.url} alt="底稿" className="canvas-img" />
+              {/* 删除按钮 - 仅在网页显示，不打印 */}
+              <button 
+                className="remove-item-btn no-print" 
+                onClick={() => onRemoveItem(row.id, item.instanceId)}
+              >
+                ×
+              </button>
+            </div>
           ))
         )}
       </div>
@@ -32,11 +38,16 @@ function DroppableRow({ row, onToggleLayout }) {
   );
 }
 
-export default function A4Canvas({ rows, a4Ref, onToggleLayout }) {
+export default function A4Canvas({ rows, a4Ref, onToggleLayout, onRemoveItem }) {
   return (
     <div className="a4-canvas" ref={a4Ref}>
       {rows.map(row => (
-        <DroppableRow key={row.id} row={row} onToggleLayout={onToggleLayout} />
+        <DroppableRow 
+            key={row.id} 
+            row={row} 
+            onToggleLayout={onToggleLayout} 
+            onRemoveItem={onRemoveItem} 
+        />
       ))}
     </div>
   );

@@ -19,35 +19,89 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
 /* 右侧主工作区 */
 .main-workspace { flex: 1; display: flex; justify-content: center; overflow-y: auto; align-items: flex-start;}
 
-/* A4 画布核心样式 */
+/* A4 画布尺寸规范更新 */
 .a4-canvas {
   width: 210mm;
-  height: 297mm; /* 严格 A4 比例 */
+  height: 297mm;
   background: white;
-  padding: 10mm; /* 留出白边 padding */
+  /* 需求 2：上下留 2cm (20mm)，左右留 1cm (10mm) */
+  padding: 20mm 10mm; 
   box-sizing: border-box;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
   display: grid;
-  grid-template-rows: repeat(4, 1fr); /* 均分 4 行切割 */
-  gap: 10px;
+  /* 4行排版 */
+  grid-template-rows: repeat(4, 1fr); 
+  /* 需求 2：行之间留 1cm (10mm) 的间距 */
+  gap: 10mm; 
 }
 
-/* 每一行的样式 */
+/* 每一行的容器 */
+.canvas-row-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 图片在行内的布局 */
 .canvas-row {
-  border: 2px dashed #cbd5e1;
-  border-radius: 4px;
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10px;
+  gap: 10mm; /* 双列时图片间的间距也设为 1cm */
   overflow: hidden;
-  background-color: #f8fafc;
+  transition: all 0.2s;
 }
-.placeholder-text { color: #94a3b8; text-align: center; font-size: 14px; }
 
-/* 拖入后图片的约束 (关键) */
-.canvas-img { width: 100%; height: 100%; object-fit: contain; }
-.canvas-row[data-layout="2-col"] .canvas-img { flex: 1; }
+.canvas-item-container {
+  position: relative;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 适配逻辑：单列占满行高/宽，双列各占一半 */
+.canvas-row[data-layout="1-col"] .canvas-item-container {
+  width: 100%;
+}
+.canvas-row[data-layout="2-col"] .canvas-item-container {
+  width: calc(50% - 5mm); /* 减去间距的一半 */
+}
+
+/* 核心：确保图片不溢出 */
+.canvas-img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain; /* 保持比例，自动适配大小 */
+}
+
+/* 删除按钮样式 */
+.remove-item-btn {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.remove-item-btn:hover { background: #dc2626; }
+
+/* 截图时隐藏 UI 元素 */
+.html2canvas-container .remove-item-btn {
+  display: none !important;
+}
 
 
 /* 下载按钮样式 */
