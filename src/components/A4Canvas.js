@@ -6,7 +6,6 @@ function DroppableRow({ row, onToggleLayout, onRemoveItem }) {
 
   const style = {
     backgroundColor: isOver ? '#f0f9ff' : undefined,
-    border: isOver ? '2px solid #3b82f6' : '1px dashed #cbd5e1',
   };
 
   return (
@@ -16,14 +15,15 @@ function DroppableRow({ row, onToggleLayout, onRemoveItem }) {
         <button className={row.layout === '2-col' ? 'active' : ''} onClick={() => onToggleLayout(row.id, '2-col')}>双列</button>
       </div>
       
+      {/* 这里的 border 也交给了 CSS 控制，方便截图时隐藏 */}
       <div ref={setNodeRef} style={style} className="canvas-row" data-layout={row.layout}>
         {row.items.length === 0 ? (
           <div className="placeholder-text">拖拽图片至此</div>
         ) : (
           row.items.map((item) => (
             <div key={item.instanceId} className="canvas-item-container">
-              <img src={item.url} alt="底稿" className="canvas-img" />
-              {/* 删除按钮 - 仅在网页显示，不打印 */}
+              {/* 极其重要：声明跨域匿名加载 */}
+              <img src={item.url} alt="底稿" className="canvas-img" crossOrigin="anonymous" />
               <button 
                 className="remove-item-btn no-print" 
                 onClick={() => onRemoveItem(row.id, item.instanceId)}

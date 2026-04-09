@@ -23,6 +23,10 @@ export default function App() {
   ]);
 
   const a4Ref = useRef(null);
+  
+  // 新增：打印状态控制
+  const [isPrinting, setIsPrinting] = useState(false);
+
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
   }));
@@ -30,10 +34,8 @@ export default function App() {
   const handleDragEnd = (event) => {
     const { active, over } = event;
     if (!over) return;
-
     const imageId = active.id;
     const targetRowId = over.id;
-
     const draggedItem = ordersData[activeOrderId].find(item => item.id === imageId);
     if (!draggedItem) return;
 
@@ -41,7 +43,6 @@ export default function App() {
       if (row.id === targetRowId) {
         const max = row.layout === '1-col' ? 1 : 2;
         if (row.items.length < max) {
-          // 关键改动：保留原数据，仅在画布状态中添加带唯一 ID 的新实例
           return { 
             ...row, 
             items: [...row.items, { ...draggedItem, instanceId: `${draggedItem.id}-${Date.now()}` }] 
@@ -50,10 +51,8 @@ export default function App() {
       }
       return row;
     }));
-    // 注意：这里不再调用 setOrdersData 移除左侧图片
   };
 
-  // 添加：从画布中删除某个图片的函数（既然是复制，就需要能删除）
   const removeItemFromCanvas = (rowId, instanceId) => {
     setCanvasRows(prev => prev.map(row => {
       if (row.id === rowId) {
@@ -69,17 +68,34 @@ export default function App() {
     ));
   };
 
-  const downloadImage = async () => {
+  // 优化后的极净下载功能
+  const downloadImage = () => {
     if (!a4Ref.current) return;
-    const canvas = await html2canvas(a4Ref.current, { 
-      scale: 3, // 提高到3倍采样，确保打印不模糊
-      useCORS: true, 
-      backgroundColor: '#ffffff' 
-    });
-    const link = document.createElement('a');
-    link.href = canvas.toDataURL("image/png");
-    link.download = `订单-${activeOrderId}-排版底稿.png`;
-    link.click();
+    
+    // 1. 开启打印模式，触发 CSS 隐藏所有多余的线框和按钮
+    setIsPrinting(true);
+
+    // 2. 稍微延迟 100ms，等 React 把界面上那些虚线和按钮清理掉后，再截图
+    setTimeout(async () => {
+      try {
+        const canvas = await html2canvas(a4Ref.current, { 
+          scale: 3, 
+          useCORS: true, // 允许跨域
+          allowTaint: false,
+          backgroundColor: '#ffffff' 
+        });
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL("image/png");
+        link.download = `订单-${activeOrderId}-高清底稿.png`;
+        link.click();
+      } catch (error) {
+        console.error("生成图片失败:", error);
+        alert("图片下载失败，请确保 R2 已配置 CORS 规则！");
+      } finally {
+        // 3. 截图完成后，恢复正常的编辑界面
+        setIsPrinting(false);
+      }
+    }, 100);
   };
 
   return (
@@ -96,12 +112,15 @@ export default function App() {
         </div>
 
         <div className="main-workspace">
-          <A4Canvas 
-            rows={canvasRows} 
-            a4Ref={a4Ref} 
-            onToggleLayout={toggleLayout} 
-            onRemoveItem={removeItemFromCanvas} 
-          />
+          {/* 这里非常关键：给 A4 画布动态添加 is-printing 类名 */}
+          <div className={`a4-wrapper ${isPrinting ? 'is-printing' : ''}`}>
+             <A4Canvas 
+               rows={canvasRows} 
+               a4Ref={a4Ref} 
+               onToggleLayout={toggleLayout} 
+               onRemoveItem={removeItemFromCanvas} 
+             />
+          </div>
         </div>
       </div>
     </DndContext>

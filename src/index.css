@@ -3,39 +3,60 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
 /* 主体布局：左侧固定，右侧自适应 */
 .app-container { display: flex; height: 100vh; padding: 20px; box-sizing: border-box; gap: 20px; }
 
-/* 左侧边栏样式 */
-.sidebar-container { width: 300px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); padding: 20px; display: flex; flex-direction: column;}
+/* ================= 侧边栏及按钮样式 ================= */
+.sidebar-container { 
+  width: 300px; 
+  background: white; 
+  border-radius: 8px; 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05); 
+  padding: 20px; 
+  display: flex; 
+  flex-direction: column;
+}
 .order-select { width: 100%; padding: 8px; margin-bottom: 20px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; }
 .sidebar-pool {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* 2列排版 */
+  grid-template-columns: repeat(2, 1fr); 
   gap: 10px;
-  overflow-y: auto; /* 图片多时可滚动 */
+  overflow-y: auto; 
 }
 .thumbnail-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 5px; cursor: grab; background: #fff;}
 .thumbnail-card img { width: 100%; height: 80px; object-fit: contain; }
 .sku-label { font-size: 12px; text-align: center; color: #666; margin-top: 4px; }
 
-/* 右侧主工作区 */
+.download-btn {
+  margin-top: 20px;
+  padding: 12px;
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 16px;
+}
+.download-btn:hover { background-color: #1d4ed8; }
+
+
+/* ================= 右侧主工作区及 A4 画布 ================= */
 .main-workspace { flex: 1; display: flex; justify-content: center; overflow-y: auto; align-items: flex-start;}
 
-/* A4 画布尺寸规范更新 */
 .a4-canvas {
   width: 210mm;
   height: 297mm;
   background: white;
-  /* 需求 2：上下留 2cm (20mm)，左右留 1cm (10mm) */
+  /* 上下留 2cm (20mm)，左右留 1cm (10mm) */
   padding: 20mm 10mm; 
   box-sizing: border-box;
   box-shadow: 0 10px 25px rgba(0,0,0,0.1);
   display: grid;
-  /* 4行排版 */
   grid-template-rows: repeat(4, 1fr); 
-  /* 需求 2：行之间留 1cm (10mm) 的间距 */
+  /* 行之间留 1cm (10mm) 的间距 */
   gap: 10mm; 
 }
 
-/* 每一行的容器 */
+
+/* ================= 每一行容器及布局控制 ================= */
 .canvas-row-wrapper {
   position: relative;
   width: 100%;
@@ -44,17 +65,41 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
   flex-direction: column;
 }
 
-/* 图片在行内的布局 */
+.layout-controls {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 10;
+  display: flex;
+  gap: 5px;
+}
+.layout-controls button {
+  padding: 4px 8px;
+  font-size: 10px;
+  border: 1px solid #cbd5e1;
+  background: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.layout-controls button.active { background: #2563eb; color: white; border-color: #2563eb; }
+
+/* 图片在行内的外框 */
 .canvas-row {
   flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 10mm; /* 双列时图片间的间距也设为 1cm */
+  gap: 10mm; /* 双列时图片间的间距设为 1cm */
   overflow: hidden;
   transition: all 0.2s;
+  border: 2px dashed #cbd5e1;
+  border-radius: 4px;
 }
 
+.placeholder-text { color: #94a3b8; text-align: center; font-size: 14px; }
+
+
+/* ================= 核心排版：图片容器与尺寸控制 ================= */
 .canvas-item-container {
   position: relative;
   height: 100%;
@@ -63,19 +108,19 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
   align-items: center;
 }
 
-/* 适配逻辑：单列占满行高/宽，双列各占一半 */
+/* 修复1：单列和双列宽度约束一模一样！强制单列处于正中间且不会变大 */
 .canvas-row[data-layout="1-col"] .canvas-item-container {
-  width: 100%;
+  width: calc(50% - 5mm); 
 }
 .canvas-row[data-layout="2-col"] .canvas-item-container {
-  width: calc(50% - 5mm); /* 减去间距的一半 */
+  width: calc(50% - 5mm); 
 }
 
-/* 核心：确保图片不溢出 */
+/* 确保图片不溢出 */
 .canvas-img {
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain; /* 保持比例，自动适配大小 */
+  object-fit: contain; 
 }
 
 /* 删除按钮样式 */
@@ -98,58 +143,22 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
 }
 .remove-item-btn:hover { background: #dc2626; }
 
-/* 截图时隐藏 UI 元素 */
-.html2canvas-container .remove-item-btn {
+
+/* ================= 极净下载模式 (修复 2) ================= */
+/* 当 App.js 触发下载，外层加上 is-printing 状态时生效 */
+
+.is-printing .no-print,
+.is-printing .remove-item-btn,
+.is-printing .layout-controls,
+.is-printing .placeholder-text {
   display: none !important;
 }
 
-
-/* 下载按钮样式 */
-.download-btn {
-  margin-top: 20px;
-  padding: 12px;
-  background-color: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-weight: bold;
-  font-size: 16px;
-}
-.download-btn:hover { background-color: #1d4ed8; }
-
-/* 布局控制按钮 */
-.canvas-row-wrapper { position: relative; width: 100%; height: 100%; }
-.layout-controls {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  z-index: 10;
-  display: flex;
-  gap: 5px;
-}
-.layout-controls button {
-  padding: 4px 8px;
-  font-size: 10px;
-  border: 1px solid #cbd5e1;
-  background: white;
-  cursor: pointer;
-  border-radius: 4px;
-}
-.layout-controls button.active {
-  background: #2563eb;
-  color: white;
-  border-color: #2563eb;
+.is-printing .canvas-row {
+  border-color: transparent !important;
+  background-color: transparent !important;
 }
 
-/* 截图时隐藏虚线和按钮 */
-.canvas-row-wrapper .canvas-row { border: 2px dashed #cbd5e1; }
-/* 当 html2canvas 运行时，我们可以通过 CSS 隐藏不需要的内容 */
-.html2canvas-container .no-print, 
-.html2canvas-container .layout-controls,
-.html2canvas-container .placeholder-text {
-  display: none !important;
-}
-.html2canvas-container .canvas-row {
-  border: none !important;
+.is-printing .a4-canvas {
+  box-shadow: none !important; /* 去掉A4纸边缘阴影 */
 }
