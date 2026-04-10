@@ -20,11 +20,8 @@ function DroppableRow({ row, onToggleLayout, onRemoveItem, overlapOffset }) {
           <div className="placeholder-text">拖拽图片至此</div>
         ) : (
           row.items.map((item, index) => {
-            
-            // 计算双列的靠拢边距
             const isTwoCol = row.layout === '2-col';
             const marginStyle = isTwoCol ? {
-              // 左边的图向右拉，右边的图向左拉
               marginRight: index === 0 ? `-${overlapOffset}mm` : '0',
               marginLeft: index === 1 ? `-${overlapOffset}mm` : '0',
               transition: 'margin 0.1s ease-out'
@@ -32,7 +29,6 @@ function DroppableRow({ row, onToggleLayout, onRemoveItem, overlapOffset }) {
 
             return (
               <div key={item.instanceId} className="canvas-item-container" style={marginStyle}>
-                {/* 加上 instanceId 防止跨域缓存冲突 */}
                 <img src={`${item.url}?v=${item.instanceId}`} alt="底稿" className="canvas-img" crossOrigin="anonymous" />
                 <button 
                   className="remove-item-btn no-print" 

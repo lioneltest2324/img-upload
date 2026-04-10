@@ -19,22 +19,40 @@ function DraggableThumbnail({ item }) {
       {...attributes} 
       className="thumbnail-card"
     >
-      {/* 加上 ?v=sidebar 防止跨域缓存冲突 */}
       <img src={`${item.url}?v=sidebar`} alt="SKU" crossOrigin="anonymous" />
       <div className="sku-label">SKU: {item.sku}</div>
     </div>
   );
 }
 
-export default function Sidebar({ orders, activeOrderItems, activeOrderId, onOrderChange, overlapOffset, onOverlapChange }) {
+export default function Sidebar({ orders, activeOrderItems, activeOrderIds, onOrderChange, overlapOffset, onOverlapChange }) {
+  
+  // 处理多选切换
+  const handleToggleOrder = (orderId) => {
+    if (activeOrderIds.includes(orderId)) {
+      onOrderChange(activeOrderIds.filter(id => id !== orderId));
+    } else {
+      onOrderChange([...activeOrderIds, orderId]);
+    }
+  };
+
   return (
     <div className="sidebar-content">
-      <h2>订单选择</h2>
-      <select value={activeOrderId} onChange={(e) => onOrderChange(e.target.value)} className="order-select">
-        {orders.map(id => <option key={id} value={id}>订单 #{id}</option>)}
-      </select>
+      <h2>订单选择 (多选)</h2>
+      {/* 订单多选列表 */}
+      <div className="order-selection-list">
+        {orders.map(id => (
+          <label key={id} className="order-checkbox-item">
+            <input 
+              type="checkbox" 
+              checked={activeOrderIds.includes(id)} 
+              onChange={() => handleToggleOrder(id)} 
+            />
+            <span>订单 #{id}</span>
+          </label>
+        ))}
+      </div>
 
-      {/* 滑动条控制区 */}
       <div className="slider-container">
         <label>双列向内靠拢: {overlapOffset} mm</label>
         <input 
@@ -46,10 +64,9 @@ export default function Sidebar({ orders, activeOrderItems, activeOrderId, onOrd
           onChange={(e) => onOverlapChange(e.target.value)}
           className="overlap-slider"
         />
-        <div className="slider-help">向右拖动消除图片内边距，强制重叠</div>
       </div>
 
-      <h3>图片底稿 ({activeOrderId})</h3>
+      <h3>合并去重底稿 ({activeOrderItems.length} 个SKU)</h3>
       <div className="sidebar-pool">
         {activeOrderItems?.map(item => (
           <DraggableThumbnail key={item.id} item={item} />

@@ -1,9 +1,7 @@
 body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans-serif; }
 
-/* 主体布局：左侧固定，右侧自适应 */
 .app-container { display: flex; height: 100vh; padding: 20px; box-sizing: border-box; gap: 20px; }
 
-/* ================= 侧边栏及按钮样式 ================= */
 .sidebar-container { 
   width: 300px; 
   background: white; 
@@ -13,9 +11,29 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
   display: flex; 
   flex-direction: column;
 }
-.order-select { width: 100%; padding: 8px; margin-bottom: 20px; font-size: 16px; border-radius: 4px; border: 1px solid #ccc; }
 
-/* 滑动条微调器样式 */
+/* 订单多选列表样式 */
+.order-selection-list {
+  max-height: 150px;
+  overflow-y: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fdfdfd;
+}
+.order-checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.order-checkbox-item input { cursor: pointer; }
+
 .slider-container {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -30,16 +48,7 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
   color: #1e293b;
   margin-bottom: 8px;
 }
-.overlap-slider {
-  width: 100%;
-  cursor: pointer;
-  accent-color: #2563eb;
-}
-.slider-help {
-  font-size: 11px;
-  color: #64748b;
-  margin-top: 4px;
-}
+.overlap-slider { width: 100%; cursor: pointer; accent-color: #2563eb; }
 
 .sidebar-pool {
   display: grid;
@@ -64,8 +73,6 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
 }
 .download-btn:hover { background-color: #1d4ed8; }
 
-
-/* ================= 右侧主工作区及 A4 画布 ================= */
 .main-workspace { flex: 1; display: flex; justify-content: center; overflow-y: auto; align-items: flex-start;}
 
 .a4-canvas {
@@ -82,7 +89,6 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
   position: relative;
 }
 
-/* ================= 每一行容器及布局控制 ================= */
 .canvas-row-wrapper {
   height: 56.75mm; 
   width: 100%;
@@ -118,13 +124,8 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
   gap: 10mm; 
   border: 2px dashed #cbd5e1;
   box-sizing: border-box;
-  transition: all 0.2s;
 }
 
-.placeholder-text { color: #94a3b8; text-align: center; font-size: 14px; }
-
-
-/* ================= 核心排版：图片容器与尺寸控制 ================= */
 .canvas-item-container {
   height: 100%;
   width: 90mm; 
@@ -134,11 +135,7 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
   position: relative;
 }
 
-.canvas-img {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain; 
-}
+.canvas-img { max-width: 100%; max-height: 100%; object-fit: contain; }
 
 .remove-item-btn {
   position: absolute;
@@ -155,27 +152,16 @@ body, html { margin: 0; padding: 0; background-color: #f3f4f6; font-family: sans
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
-.remove-item-btn:hover { background: #dc2626; }
 
-
-/* ================= 极净下载模式 ================= */
 .is-printing .no-print,
 .is-printing .remove-item-btn,
 .is-printing .layout-controls,
 .is-printing .placeholder-text {
   display: none !important;
 }
-
-.is-printing .canvas-row {
-  border: none !important;
-  background-color: transparent !important;
-}
-
-.is-printing .a4-canvas {
-  box-shadow: none !important; 
-}
+.is-printing .canvas-row { border: none !important; }
+.is-printing .a4-canvas { box-shadow: none !important; }
 
 .loading-screen {
   display: flex;
