@@ -6,10 +6,10 @@ import A4Canvas from './components/A4Canvas';
 import './index.css';
 
 export default function App() {
+  // 1. 初始化状态：初始为空对象
   const [ordersData, setOrdersData] = useState({});
-  // 变更 1：当前选中的订单变成数组格式，支持多选
-  const [activeOrderIds, setActiveOrderIds] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [activeOrderId, setActiveOrderId] = useState("");
+  const [isLoading, setIsLoading] = useState(true); // 加载状态
   
   const [canvasRows, setCanvasRows] = useState([
     { id: 'row-1', layout: '1-col', items: [] },
@@ -19,21 +19,24 @@ export default function App() {
   ]);
 
   const [overlapOffset, setOverlapOffset] = useState(0);
-  // 新增：行间距状态（默认 10mm，最大 30mm）
-  const [rowSpacing, setRowSpacing] = useState(10);
   const [isPrinting, setIsPrinting] = useState(false);
   const a4Ref = useRef(null);
 
   const API_URL = "https://script.google.com/macros/s/AKfycbyEyj4bcl_HjGn3BJlFDoNbCW3SeTLw1qSUpLK9UcoByDlQ989hJTYAULKgUZuBqt5B5A/exec";
 
+  // 2. 使用 useEffect 在页面加载时获取数据
   useEffect(() => {
     fetch(API_URL)
       .then(response => response.json())
       .then(data => {
+        // 将 API 返回的扁平数组转换为按“订单号”分组的对象
         const grouped = data.reduce((acc, item) => {
           const orderId = String(item["订单号"]);
-          if (!acc[orderId]) acc[orderId] = [];
+          if (!acc[orderId]) {
+            acc[orderId] = [];
+          }
           acc[orderId].push({
+            // 唯一 ID：SKU + 随机数，防止重复
             id: `img-${item["SKU"]}-${Math.random().toString(36).substr(2, 9)}`,
             sku: item["SKU"],
             url: item["匹配URL"][0]
@@ -43,10 +46,10 @@ export default function App() {
 
         setOrdersData(grouped);
         
-        // 变更 2：获取所有订单号并进行降序排列（大的在上）
-        const sortedOrders = Object.keys(grouped).sort((a, b) => Number(b) - Number(a));
-        if (sortedOrders.length > 0) {
-          setActiveOrderIds([sortedOrders[0]]); // 默认选中最大的订单
+        // 默认选中第一个订单
+        const firstOrder = Object.keys(grouped)[0];
+        if (firstOrder) {
+          setActiveOrderId(firstOrder);
         }
         setIsLoading(false);
       })
@@ -54,29 +57,11 @@ export default function App() {
         console.error("获取数据失败:", error);
         setIsLoading(false);
       });
-  }, []);
+  }, []); // 仅在组件挂载时执行一次
 
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: { distance: 8 },
   }));
-
-  // 变更 3：核心去重逻辑，合并所选订单的图片并根据 SKU 去重
-  const getActiveItems = () => {
-    const items = [];
-    const seenSkus = new Set();
-    
-    activeOrderIds.forEach(orderId => {
-      if (ordersData[orderId]) {
-        ordersData[orderId].forEach(item => {
-          if (!seenSkus.has(item.sku)) {
-            seenSkus.add(item.sku);
-            items.push(item);
-          }
-        });
-      }
-    });
-    return items;
-  };
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -85,8 +70,8 @@ export default function App() {
     const imageId = active.id;
     const targetRowId = over.id;
 
-    // 从聚合去重后的列表中寻找被拖拽的图片
-    const draggedItem = getActiveItems().find(item => item.id === imageId);
+    // 从当前选中的订单中找到图片数据
+    const draggedItem = ordersData[activeOrderId]?.find(item => item.id === imageId);
     if (!draggedItem) return;
 
     setCanvasRows(prevRows => prevRows.map(row => {
@@ -130,7 +115,7 @@ export default function App() {
         });
         const link = document.createElement('a');
         link.href = canvas.toDataURL("image/png");
-        link.download = `合并订单排版底稿.png`; // 名字改为泛用型
+        link.download = `订单-${activeOrderId}.png`;
         link.click();
       } finally {
         setIsPrinting(false);
@@ -138,27 +123,22 @@ export default function App() {
     }, 100);
   };
 
+  // 如果正在加载，显示提示
   if (isLoading) {
     return <div className="loading-screen">正在获取订单数据，请稍候...</div>;
   }
-
-  // 保证传给 Sidebar 的也是排好序的订单列表
-  const sortedOrderKeys = Object.keys(ordersData).sort((a, b) => Number(b) - Number(a));
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="app-container">
         <div className="sidebar-container">
           <Sidebar 
-            orders={sortedOrderKeys}
-            activeOrderItems={getActiveItems()} 
-            activeOrderIds={activeOrderIds}
-            onOrderChange={setActiveOrderIds} 
+            orders={Object.keys(ordersData)}
+            activeOrderItems={ordersData[activeOrderId]} 
+            activeOrderId={activeOrderId}
+            onOrderChange={setActiveOrderId} 
             overlapOffset={overlapOffset}
             onOverlapChange={setOverlapOffset}
-            // 传递行间距给侧边栏控制
-            rowSpacing={rowSpacing}
-            onRowSpacingChange={setRowSpacing}
           />
           <button className="download-btn" onClick={downloadImage}>下载高清底稿</button>
         </div>
@@ -171,8 +151,6 @@ export default function App() {
                onToggleLayout={toggleLayout} 
                onRemoveItem={removeItemFromCanvas} 
                overlapOffset={overlapOffset}
-               // 传递行间距给画布
-               rowSpacing={rowSpacing}
              />
           </div>
         </div>

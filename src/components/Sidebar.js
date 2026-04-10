@@ -19,63 +19,37 @@ function DraggableThumbnail({ item }) {
       {...attributes} 
       className="thumbnail-card"
     >
+      {/* 加上 ?v=sidebar 防止跨域缓存冲突 */}
       <img src={`${item.url}?v=sidebar`} alt="SKU" crossOrigin="anonymous" />
       <div className="sku-label">SKU: {item.sku}</div>
     </div>
   );
 }
 
-export default function Sidebar({ orders, activeOrderItems, activeOrderIds, onOrderChange, overlapOffset, onOverlapChange, rowSpacing, onRowSpacingChange }) {
-  
-  // 处理多选框的变更逻辑
-  const handleCheckboxChange = (orderId, isChecked) => {
-    if (isChecked) {
-      onOrderChange([...activeOrderIds, orderId]);
-    } else {
-      onOrderChange(activeOrderIds.filter(id => id !== orderId));
-    }
-  };
-
+export default function Sidebar({ orders, activeOrderItems, activeOrderId, onOrderChange, overlapOffset, onOverlapChange }) {
   return (
     <div className="sidebar-content">
-      <h2>订单选择 (可多选)</h2>
-      {/* 变更 4：多选订单列表 UI */}
-      <div className="order-multi-select">
-        {orders.map(id => (
-          <label key={id} className="order-checkbox-label">
-            <input 
-              type="checkbox" 
-              checked={activeOrderIds.includes(id)} 
-              onChange={(e) => handleCheckboxChange(id, e.target.checked)}
-            />
-            订单 #{id}
-          </label>
-        ))}
-      </div>
+      <h2>订单选择</h2>
+      <select value={activeOrderId} onChange={(e) => onOrderChange(e.target.value)} className="order-select">
+        {orders.map(id => <option key={id} value={id}>订单 #{id}</option>)}
+      </select>
 
+      {/* 滑动条控制区 */}
       <div className="slider-container">
-        {/* 原有双列滑块 */}
-        <div className="slider-group">
-          <label>双列向内靠拢: {overlapOffset} mm</label>
-          <input 
-            type="range" min="0" max="40" step="1"
-            value={overlapOffset} onChange={(e) => onOverlapChange(e.target.value)}
-            className="custom-slider"
-          />
-        </div>
-
-        {/* 新增：行间距调整滑块 */}
-        <div className="slider-group" style={{marginTop: '15px'}}>
-          <label>行间距 (Gap): {rowSpacing} mm</label>
-          <input 
-            type="range" min="0" max="30" step="1"
-            value={rowSpacing} onChange={(e) => onRowSpacingChange(e.target.value)}
-            className="custom-slider"
-          />
-        </div>
+        <label>双列向内靠拢: {overlapOffset} mm</label>
+        <input 
+          type="range" 
+          min="0" 
+          max="40" 
+          step="1"
+          value={overlapOffset} 
+          onChange={(e) => onOverlapChange(e.target.value)}
+          className="overlap-slider"
+        />
+        <div className="slider-help">向右拖动消除图片内边距，强制重叠</div>
       </div>
 
-      <h3>去重底稿图池 (共 {activeOrderItems.length} 张)</h3>
+      <h3>图片底稿 ({activeOrderId})</h3>
       <div className="sidebar-pool">
         {activeOrderItems?.map(item => (
           <DraggableThumbnail key={item.id} item={item} />
